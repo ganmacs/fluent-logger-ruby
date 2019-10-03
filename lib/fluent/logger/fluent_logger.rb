@@ -258,6 +258,16 @@ module Fluent
         unless connect?
           connect!
         end
+
+        begin
+          # detect a socket is closed on the other end
+          @con.read_nonblock(1)
+        rescue EOFError => _
+          return -1           # closed
+        rescue IO::WaitReadable, Errno::EINTR => _
+          # socket is not closed. skip
+        end
+
         if @use_nonblock
           send_data_nonblock(data)
         else
